@@ -1,10 +1,10 @@
 {
-  "name": "laravel-echo-server",
+  "name": "@Kamil-Michalak/laravel-echo-server",
   "version": "1.6.2",
   "description": "Laravel Echo Node JS Server for Socket.io",
   "repository": {
     "type": "git",
-    "url": "https://github.com/tlaverdure/Laravel-Echo-Server.git"
+    "url": "https://github.com/Kamil-Michalak/laravel-echo-server.git"
   },
   "main": "dist/index.js",
   "keywords": [
@@ -15,6 +15,9 @@
   "license": "MIT",
   "jshintConfig": {
     "esversion": 6
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com/Kamil-Michalak"
   },
   "scripts": {
     "build": "tsc",
