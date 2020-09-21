@@ -33,9 +33,20 @@ export class Database implements DatabaseDriver {
     };
 
     /**
+     * Get a value from the database.
+     */
+    getAll(key: string): Promise<any> {
+        return this.driver.getAll(key)
+    };
+
+    /**
      * Set a value to the database.
      */
     set(key: string, value: any): void {
         this.driver.set(key, value);
     };
+
+    publish(channel: string, value: any): void {
+        this.driver.publish(channel, value);
+    }
 }

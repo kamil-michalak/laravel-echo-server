@@ -1,5 +1,6 @@
 import { Database } from './../database';
 import { Log } from './../log';
+import { hostname } from 'os';
 var _ = require("lodash");
 
 export class PresenceChannel {
@@ -23,23 +24,24 @@ export class PresenceChannel {
     }
 
     /**
+    * Get the members of a presence channel.
+    */
+    getMembersAll(channel: string): Promise<any> {
+        return this.db.getAll(channel + ":members");
+    }
+
+    /**
      * Check if a user is on a presence channel.
      */
     isMember(channel: string, member: any): Promise<boolean> {
         return new Promise((resolve, reject) => {
-            this.getMembers(channel).then(
+            this.getMembersAll(channel).then(
                 (members) => {
                     this.removeInactive(channel, members, member).then(
                         (members: any) => {
-                            let search = members.filter(
+                            resolve(members.find(
                                 (m) => m.user_id == member.user_id
-                            );
-
-                            if (search && search.length) {
-                                resolve(true);
-                            }
-
-                            resolve(false);
+                            ));
                         }
                     );
                 },
@@ -84,15 +86,19 @@ export class PresenceChannel {
             return;
         }
 
+        const hostName: string = hostname();
+
         this.isMember(channel, member).then(
             (is_member) => {
-                this.getMembers(channel).then(
+                this.getMembersAll(channel).then(
                     (members) => {
                         members = members || [];
                         member.socketId = socket.id;
+                        member.hostName = hostName;
+
                         members.push(member);
 
-                        this.db.set(channel + ":members", members);
+                        this.db.set(channel + ":members", members.filter(i => i.hostName === hostName));
 
                         members = _.uniqBy(members.reverse(), "user_id");
 
@@ -141,16 +147,37 @@ export class PresenceChannel {
      * On join event handler.
      */
     onJoin(socket: any, channel: string, member: any): void {
-        this.io.sockets.connected[socket.id].broadcast
-            .to(channel)
-            .emit("presence:joining", channel, member);
+        if (this.options.databaseConfig.publishPresence === true) {
+            this.db.publish(channel, JSON.stringify({
+                event: "presence:joining",
+                socket: socket.id,
+                data: member
+            }));
+            this.db.publish('PresenceChannelUpdated', JSON.stringify({
+                "channel": channel,
+                "members": member
+            }));
+        }
+        else {
+            this.io.sockets.connected[socket.id].broadcast
+                .to(channel)
+                .emit("presence:joining", channel, member);
+        }
     }
 
     /**
      * On leave emitter.
      */
     onLeave(channel: string, member: any): void {
-        this.io.to(channel).emit("presence:leaving", channel, member);
+        if (this.options.databaseConfig.publishPresence === true) {
+            this.db.publish(channel, JSON.stringify({
+                event: "presence:leaving",
+                data: member
+            }));
+        }
+        else {
+            this.io.to(channel).emit("presence:leaving", channel, member);
+        }
     }
 
     /**

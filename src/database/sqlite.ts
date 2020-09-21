@@ -43,6 +43,10 @@ export class SQLiteDatabase implements DatabaseDriver {
         });
     }
 
+    getAll(key: string): Promise<any> {
+        return this.get(key);
+    }
+
     /**
      * Store data to cache.
      */
@@ -51,5 +55,9 @@ export class SQLiteDatabase implements DatabaseDriver {
             $key: key,
             $value: JSON.stringify(value)
         });
+    }
+
+    publish(channel: string, value: any): void {
+
     }
 }
